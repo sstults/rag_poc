@@ -1,0 +1,99 @@
+# AWS Lambda deployment configuration
+
+function_name: hr-profile-processor
+handler: lambda_function.lambda_handler
+runtime: python3.11
+timeout: 300  # 5 minutes
+memory_size: 1024  # MB
+architecture: x86_64
+
+# Environment variables will be set through AWS console or CI/CD
+environment_variables:
+  - OPENSEARCH_HOST
+  - OPENSEARCH_PORT
+  - OPENSEARCH_USERNAME
+  - OPENSEARCH_PASSWORD
+  - OPENSEARCH_USE_SSL
+  - AWS_REGION
+  - S3_BUCKET
+  - BEDROCK_MODEL_ID
+
+# Required IAM permissions
+iam_permissions:
+  - Effect: Allow
+    Action:
+      - s3:GetObject
+      - s3:ListBucket
+    Resource:
+      - arn:aws:s3:::${S3_BUCKET}
+      - arn:aws:s3:::${S3_BUCKET}/*
+  
+  - Effect: Allow
+    Action:
+      - bedrock:InvokeModel
+    Resource:
+      - arn:aws:bedrock:${AWS_REGION}::foundation-model/${BEDROCK_MODEL_ID}
+
+# Packaging instructions
+package:
+  # Include only necessary files
+  include:
+    - lambda_function.py
+    - hr_data_pipeline/**/*.py
+  
+  # Use requirements-lambda.txt for dependencies
+  requirements: requirements-lambda.txt
+  
+  # Exclude development and test files
+  exclude:
+    - "**/*.pyc"
+    - "**/__pycache__"
+    - "**/*.egg-info"
+    - "test_*.py"
+    - ".env"
+    - "sample_data/*"
+
+# Lambda triggers
+triggers:
+  s3:
+    bucket: ${S3_BUCKET}
+    events:
+      - s3:ObjectCreated:*
+    filters:
+      prefix: profiles/
+      suffix: .json
+
+# VPC configuration (if needed for OpenSearch access)
+vpc_config:
+  subnet_ids: []  # To be filled based on VPC setup
+  security_group_ids: []  # To be filled based on VPC setup
+
+# Tags
+tags:
+  Environment: production
+  Project: hr-rag-system
+  Component: data-pipeline
+
+# Monitoring and logging
+cloudwatch:
+  log_retention_days: 30
+  metrics:
+    - ProcessingTime
+    - ProcessingErrors
+    - ChunksCreated
+
+# Alarms
+alarms:
+  - name: ProcessingErrors
+    threshold: 2
+    period: 300  # 5 minutes
+    evaluation_periods: 1
+    comparison_operator: GreaterThanThreshold
+    treat_missing_data: notBreaching
+
+# Deployment strategy
+deployment:
+  type: linear
+  settings:
+    linear_percentage: 10
+    interval: 1  # minute
