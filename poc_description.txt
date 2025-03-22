@@ -1,0 +1,39 @@
+We have an inquiry to help a startup build a RAG POC. It seems that the POC would serve the following purposes:
+
+Create a reasonable RAG implementation/architecture that could serve as a solid starting point for further development. That’s why they’d like to hire OSC - don’t waste time on something that has low chances to survive past the POC phase.
+Get a feel for the application - both for their own product development but also for their VC funders.
+
+Exclusion: at this point they understand that retrieval/answer quality cannot be tuned yet to “great”
+
+
+Background info:
+
+The domain is HR. There might be future RAG applications in additional domains.
+
+It’s absolutely greenfield. No application, no platform, no data, no dev team yet.
+
+The idea is to provide a RAG that uses hybrid search under the hood.
+
+They would provide us with data that they would put together (scrape?) specifically for the purpose of this POC. Think of JSON files in an S3 bucket. They have knowledge in the HR domain and they do have a data schema in mind: probably nested documents with (semi-?)structured HR profile data and Q&A of this candidate => relatively low integration requirements but the data schema might still be a bit wobbly.
+
+Proposal of what we should provide:
+
+RAG system in AWS
+RAG backed by hybrid search using AWS OpenSearch
+“One-time” indexing from JSON files in S3 bucket (i.e. manually repeatable process but no permanent/automatic indexing as data won’t update)
+Web UI
+They understand that this would be simple - nevertheless, making it a great experience could help them and us to get follow-up funding. Maybe make use of AI to generate frontend 
+Some kind of access control (maybe even shared password)
+RAG flow:
+Sanity check of question (harmfulness etc)
+Some example entity recognition (maybe location or some other attribute we find in the data). The main purpose would be where in the flow that would happen and how, not so much for quality.
+Retrieval from OpenSearch (obviously). Prepare the flow for further data sources and use OpenSearch as the first one.
+Sanity check of response (e.g. against hallucination) 
+Some form of tracking of questions and search
+Simple, maybe RAGAS-based, question-answer evaluation based on questions they provide and some that we generate
+LLM selection (quality, performance, cost triangulation)
+Optional (= estimate separately): Simple optimisation based on LLM as a judge and Bayesian optimization / chunk tuning. Just a couple of passes to introduce some systematical optimization - it need not be great (= ‘better than nothing).
+Platform documentation and recommendation for future development
+  
+
+ 

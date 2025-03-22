@@ -1,0 +1,63 @@
+{
+  "id": "prof_001",
+  "basic_info": {
+    "name": "Jane Smith",
+    "location": "San Francisco, CA",
+    "current_role": "Senior Software Engineer"
+  },
+  "experience": [
+    {
+      "company": "Tech Solutions Inc",
+      "role": "Senior Software Engineer",
+      "duration": "2020-Present",
+      "responsibilities": [
+        "Led development of cloud-native microservices architecture",
+        "Mentored junior developers and conducted code reviews",
+        "Implemented CI/CD pipelines reducing deployment time by 60%",
+        "Architected and deployed scalable AWS infrastructure"
+      ]
+    },
+    {
+      "company": "Innovation Labs",
+      "role": "Software Engineer",
+      "duration": "2017-2020",
+      "responsibilities": [
+        "Developed full-stack web applications using React and Node.js",
+        "Optimized database queries improving performance by 40%",
+        "Implemented automated testing frameworks",
+        "Collaborated with product team on feature specifications"
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "category": "Programming Languages",
+      "skills": ["Python", "JavaScript", "Java", "Go", "SQL"]
+    },
+    {
+      "category": "Cloud Technologies",
+      "skills": ["AWS", "Docker", "Kubernetes", "Terraform"]
+    },
+    {
+      "category": "Web Technologies",
+      "skills": ["React", "Node.js", "GraphQL", "REST APIs"]
+    }
+  ],
+  "qa_data": [
+    {
+      "question": "What experience does Jane have with cloud technologies?",
+      "answer": "Jane has extensive experience with cloud technologies, particularly AWS. She led the development of cloud-native microservices and architected AWS infrastructure at Tech Solutions Inc. She is skilled in Docker, Kubernetes, and Terraform for cloud deployments.",
+      "context": "Experience includes cloud-native development and AWS infrastructure architecture. Skills include AWS, Docker, Kubernetes, and Terraform."
+    },
+    {
+      "question": "What is Jane's experience with mentoring?",
+      "answer": "Jane has experience mentoring junior developers and conducting code reviews in her role as Senior Software Engineer at Tech Solutions Inc.",
+      "context": "At Tech Solutions Inc, responsibilities included mentoring junior developers and conducting code reviews."
+    },
+    {
+      "question": "What are Jane's main programming languages?",
+      "answer": "Jane is proficient in Python, JavaScript, Java, Go, and SQL.",
+      "context": "Skills category 'Programming Languages' includes Python, JavaScript, Java, Go, and SQL."
+    }
+  ]
+}

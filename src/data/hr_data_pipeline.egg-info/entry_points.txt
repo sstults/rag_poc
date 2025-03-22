@@ -1,0 +1,2 @@
+[console_scripts]
+process-profiles = hr_data_pipeline.cli:main
