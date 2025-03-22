@@ -77,66 +77,128 @@ class HRDataProcessor:
         
         return mock_embedding
 
+    def _prepare_text_for_chunking(self, profile: HRProfile) -> str:
+        """Prepare a coherent text representation of the profile for chunking."""
+        sections = []
+        
+        # Basic info section
+        basic_info = (
+            f"Profile Overview:\n"
+            f"Name: {profile.basic_info.name}\n"
+            f"Current Role: {profile.basic_info.current_role}\n"
+            f"Location: {profile.basic_info.location}\n"
+        )
+        sections.append(basic_info)
+        
+        # Experience section with context
+        if profile.experience:
+            exp_sections = []
+            for exp in profile.experience:
+                exp_text = (
+                    f"Professional Experience:\n"
+                    f"Role: {exp.role} at {exp.company}\n"
+                    f"Duration: {exp.duration}\n"
+                    f"Key Responsibilities:\n"
+                )
+                exp_text += "\n".join(f"- {resp}" for resp in exp.responsibilities)
+                exp_sections.append(exp_text)
+            sections.extend(exp_sections)
+        
+        # Skills section with categories
+        if profile.skills:
+            skills_sections = []
+            for skill_set in profile.skills:
+                skills_text = (
+                    f"Professional Skills - {skill_set.category}:\n"
+                    f"{', '.join(skill_set.skills)}"
+                )
+                skills_sections.append(skills_text)
+            sections.extend(skills_sections)
+        
+        # QA section with context
+        if profile.qa_data:
+            qa_sections = []
+            for qa in profile.qa_data:
+                qa_text = (
+                    f"Interview Q&A:\n"
+                    f"Question: {qa.question}\n"
+                    f"Answer: {qa.answer}\n"
+                    f"Additional Context: {qa.context}"
+                )
+                qa_sections.append(qa_text)
+            sections.extend(qa_sections)
+        
+        return "\n\n".join(sections)
+
     def _create_chunks(self, profile: HRProfile) -> List[ProcessedChunk]:
-        """Create chunks from an HR profile."""
+        """Create semantically meaningful chunks from an HR profile."""
         chunks: List[ProcessedChunk] = []
         
-        # Process experience sections
-        for exp in profile.experience:
-            text = (
-                f"Experience at {exp.company} as {exp.role} "
-                f"for {exp.duration}. Responsibilities: "
-                f"{'. '.join(exp.responsibilities)}"
-            )
-            chunk_texts = self.text_splitter.split_text(text)
-            for i, chunk_text in enumerate(chunk_texts):
-                chunk_id = f"{profile.id}_exp_{i}"
-                embedding = self._generate_embedding(chunk_text)
-                chunks.append(ProcessedChunk(
-                    text=chunk_text,
-                    embedding=embedding,
-                    metadata={
-                        "company": exp.company,
-                        "role": exp.role,
-                        "duration": exp.duration
-                    },
-                    profile_id=profile.id,
-                    chunk_id=chunk_id,
-                    source_type="experience"
-                ))
-
-        # Process skills
-        for skill_set in profile.skills:
-            text = (
-                f"Skills in {skill_set.category}: "
-                f"{', '.join(skill_set.skills)}"
-            )
-            embedding = self._generate_embedding(text)
+        # Prepare the complete text with proper formatting and context
+        full_text = self._prepare_text_for_chunking(profile)
+        
+        # Split the text into chunks while preserving semantic boundaries
+        chunk_texts = self.text_splitter.split_text(full_text)
+        
+        # Process each chunk with enhanced metadata
+        for i, chunk_text in enumerate(chunk_texts):
+            chunk_id = f"{profile.id}_chunk_{i}"
+            
+            # Determine the primary content type and extract relevant metadata
+            metadata = {
+                "name": profile.basic_info.name,
+                "current_role": profile.basic_info.current_role,
+                "location": profile.basic_info.location,
+                "chunk_index": i,
+                "total_chunks": len(chunk_texts)
+            }
+            
+            # Identify the primary content type based on the chunk content
+            if "Professional Experience:" in chunk_text:
+                source_type = "experience"
+                # Extract company and role if present in the chunk
+                for exp in profile.experience:
+                    if exp.company in chunk_text and exp.role in chunk_text:
+                        metadata.update({
+                            "company": exp.company,
+                            "role": exp.role,
+                            "duration": exp.duration
+                        })
+                        break
+            elif "Professional Skills" in chunk_text:
+                source_type = "skills"
+                # Extract skill category if present
+                for skill_set in profile.skills:
+                    if skill_set.category in chunk_text:
+                        metadata["category"] = skill_set.category
+                        break
+            elif "Interview Q&A:" in chunk_text:
+                source_type = "qa"
+                # Add question context if present
+                for qa in profile.qa_data:
+                    if qa.question in chunk_text:
+                        metadata["question"] = qa.question
+                        break
+            else:
+                source_type = "overview"
+            
+            # Add relationship metadata
+            if i > 0:
+                metadata["previous_chunk_id"] = f"{profile.id}_chunk_{i-1}"
+            if i < len(chunk_texts) - 1:
+                metadata["next_chunk_id"] = f"{profile.id}_chunk_{i+1}"
+            
+            # Generate embedding and create chunk
+            embedding = self._generate_embedding(chunk_text)
             chunks.append(ProcessedChunk(
-                text=text,
+                text=chunk_text,
                 embedding=embedding,
-                metadata={"category": skill_set.category},
+                metadata=metadata,
                 profile_id=profile.id,
-                chunk_id=f"{profile.id}_skills_{skill_set.category}",
-                source_type="skills"
+                chunk_id=chunk_id,
+                source_type=source_type
             ))
-
-        # Process QA data
-        for i, qa in enumerate(profile.qa_data):
-            text = (
-                f"Q: {qa.question}\nA: {qa.answer}\n"
-                f"Context: {qa.context}"
-            )
-            embedding = self._generate_embedding(text)
-            chunks.append(ProcessedChunk(
-                text=text,
-                embedding=embedding,
-                metadata={},
-                profile_id=profile.id,
-                chunk_id=f"{profile.id}_qa_{i}",
-                source_type="qa"
-            ))
-
+        
         return chunks
 
     def _index_chunks(self, chunks: List[ProcessedChunk]) -> None:
