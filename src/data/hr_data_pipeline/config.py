@@ -14,7 +14,7 @@ class AWSConfig:
     """AWS configuration settings."""
     region: str = os.getenv("AWS_REGION", "us-east-1")
     s3_bucket: str = os.getenv("HR_DATA_BUCKET")
-    bedrock_model_id: str = os.getenv("BEDROCK_MODEL_ID", "anthropic.claude-3-sonnet-20240229-v1:0")
+    bedrock_model_id: str = os.getenv("BEDROCK_MODEL_ID", "amazon.titan-embed-text-v1")
 
 @dataclass
 class OpenSearchConfig:

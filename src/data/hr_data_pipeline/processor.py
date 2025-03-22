@@ -59,23 +59,40 @@ class HRDataProcessor:
         )
 
     def _generate_embedding(self, text: str) -> List[float]:
-        """Generate mock embeddings for testing."""
-        # For testing: generate a simple mock embedding of correct dimension
-        import hashlib
-        import numpy as np
-        
-        # Create a deterministic but seemingly random embedding from the text
-        text_hash = hashlib.md5(text.encode()).hexdigest()
-        np.random.seed(int(text_hash[:8], 16))
-        
-        # Generate embedding of correct dimension
-        mock_embedding = list(np.random.uniform(-1, 1, processing_config.embedding_dimension))
-        
-        # Normalize to unit length for cosine similarity
-        norm = np.linalg.norm(mock_embedding)
-        mock_embedding = [x/norm for x in mock_embedding]
-        
-        return mock_embedding
+        """Generate embeddings using Amazon Bedrock."""
+        try:
+            # Prepare the request body
+            request_body = {
+                "inputText": text
+            }
+            
+            # Invoke Bedrock API
+            response = self.bedrock_client.invoke_model(
+                modelId=aws_config.bedrock_model_id,
+                contentType="application/json",
+                accept="application/json",
+                body=json.dumps(request_body)
+            )
+            
+            # Parse response
+            response_body = json.loads(response['body'].read())
+            embedding = response_body.get('embedding')
+            
+            if not embedding:
+                raise ValueError("No embedding found in Bedrock response")
+                
+            # Verify embedding dimension
+            if len(embedding) != processing_config.embedding_dimension:
+                logger.warning(
+                    f"Embedding dimension mismatch. Expected {processing_config.embedding_dimension}, "
+                    f"got {len(embedding)}"
+                )
+            
+            return embedding
+            
+        except Exception as e:
+            logger.error(f"Error generating embedding: {str(e)}")
+            raise
 
     def _prepare_text_for_chunking(self, profile: HRProfile) -> str:
         """Prepare a coherent text representation of the profile for chunking."""
